@@ -1,0 +1,152 @@
+#!/usr/bin/python3
+from redpull import *
+from urllib.request import urlopen, urlparse, Request
+import tqdm, urllib.request
+from asciimatics.event import KeyboardEvent
+from asciimatics.exceptions import NextScene, ResizeScreenError, StopApplication
+from asciimatics.scene import Scene
+from asciimatics.screen import Screen
+from asciimatics.widgets import Frame, Layout, MultiColumnListBox, Widget
+from bs4 import BeautifulSoup
+from collections import defaultdict
+from better_profanity import profanity
+
+def create_subscriptions():
+    subscribed = []
+
+    os.makedirs(os.path.join(xdg_config_home, "redp"), exist_ok=True)
+
+    if not reddit_username or not reddit_password:
+        logging.error("reddit_username and reddit_password in the config file must not be empty in order to retrieve subscriptions.")
+        exit()
+
+    with open(os.path.join(xdg_config_home, "redp/subscribed"), mode='w') as f:
+        subscriptions = csv.writer(f, delimiter='\t')
+
+        for i in list(reddit.user.subreddits(limit=None)):
+            subscribed.append(i.display_name)
+
+        subscribed = humansorted(subscribed)
+
+        for i in range(0, len(subscribed)):
+            subscriptions.writerow([subscribed[i], time.time()-3600, "0", "-100", "3650"])
+
+def filter_database(db_path):
+    print ("Filtering the database. This will take awhile.")
+
+    to_keep = []
+
+    with open(db_path, 'r', encoding='ISO-8859-1') as f:
+        for i in tqdm.tqdm(list(csv.reader(f, delimiter=','))[1:]):
+            if int(i[3]) < 2 or profanity.contains_profanity(i[0]):
+                continue
+            to_keep.append([i[0], i[1].split('\n')[0], i[2], i[3]])
+
+    with open(db_path, 'w') as f:
+        writer = csv.writer(f, delimiter=',')
+        for i in to_keep:
+            writer.writerow([i[0], i[1], i[2], i[3]])
+
+def load_database():
+    global database, databasef
+
+    url = "https://frontpagemetrics.com"
+    soup = BeautifulSoup(urllib.request.urlopen("%s/list-all-subreddits" % url), 'html.parser')
+    fileurl = soup.find('a', href=re.compile("\.csv$"))['href']
+    filename = fileurl.split('/')[2]
+
+    path_share = os.path.expanduser("~/.local/share/redp")
+    os.makedirs(path_share, exist_ok=True)
+
+    databases = os.listdir(path_share)
+
+    if filename not in databases:
+        print ("Updating database.")
+        urllib.request.urlretrieve(url+fileurl, "%s/%s" % (path_share, filename))
+
+        filter_database("%s/%s" % (path_share, filename))
+
+        # If database update was successful than remove any old databases
+        for i in databases:
+            os.remove("%s/%s" % (path_share, i))
+
+        dbname = filename
+    else:
+        dbname = databases[0]
+        
+    with open("%s/%s" % (path_share, dbname), encoding='ISO-8859-1') as f:
+        database = []
+
+        if not os.path.exists(os.path.join(xdg_config_home, "redp/subscribed")):
+            create_subscriptions()
+
+        subscriptions = get_subscriptions()
+        
+        for i in list(csv.reader(f, delimiter=','))[1:]:
+            if int(i[3]) > 100:
+                if any(i[0] in sublist for sublist in subscriptions):
+                    database.append(['S', i[0], i[1].replace('\n', ' ')[:80], i[2], i[3]])
+                else:
+                    database.append([' ', i[0], i[1].replace('\n', ' ')[:80], i[2], i[3]])
+
+        database.sort(key=lambda x:x[1])
+        databasef = database.copy()
+
+class mainFrame(Frame):
+    def __init__(self, screen):
+        super(mainFrame, self).__init__(
+            screen, screen.height, screen.width, has_border=True, name="redpick", can_scroll=False)
+
+        layout = Layout([100], fill_frame=False)
+
+        self.add_layout(layout)
+
+        self._list = MultiColumnListBox(Widget.FILL_FRAME,["2", "20%", "58%", "10%", "10%"],titles=[" ", "Subreddit", "Description", "Created", "Subscribers"],options=[(databasef[i],i) for i in range(0,len(databasef))], add_scroll_bar=True)
+
+        layout.add_widget(self._list, 0)
+
+        self.palette = defaultdict(
+            lambda: (Screen.COLOUR_WHITE, Screen.A_NORMAL, Screen.COLOUR_BLACK))
+        for key in ["selected_focus_field", "label"]:
+            self.palette[key] = (Screen.COLOUR_WHITE, Screen.A_BOLD, Screen.COLOUR_BLUE)
+        self.palette["borders"] = (Screen.COLOUR_BLUE, Screen.A_NORMAL, Screen.COLOUR_BLACK)
+        self.palette["scroll"] = (Screen.COLOUR_CYAN, Screen.A_NORMAL, Screen.COLOUR_BLUE)
+        self.palette["title"] = (Screen.COLOUR_BLUE, Screen.A_BOLD, Screen.COLOUR_BLACK)
+
+        self.fix()
+
+    def process_event(self, event):
+        # Do the key handling for this Frame.
+        if isinstance(event, KeyboardEvent):
+            if event.key_code in [Screen.ctrl("q")]:
+                raise StopApplication("User quit")
+            elif event.key_code in [Screen.ctrl("o")]:
+                webbrowser.open(bookmarksf[self._list.value][1], new=2)
+            elif event.key_code in [Screen.ctrl("y")]:
+                pyperclip.copy(bookmarksf[self._list.value][1])
+            elif event.key_code == Screen.KEY_INSERT:
+                self._scene.add_effect(ABFrame(self._screen))
+            elif event.key_code == Screen.KEY_DELETE:
+                bookmark_delete(self)
+
+        # Now pass on to lower levels for normal handling of the event.
+        return super(mainFrame, self).process_event(event)
+
+def redpick(screen, scene):
+    screen.play([Scene([mainFrame(screen)], -1)], stop_on_resize=True, start_scene=scene, allow_int=True)
+
+def main():
+    load_database()
+
+    last_scene = None
+
+    while True:
+        try:
+            Screen.wrapper(redpick, catch_interrupt=False, arguments=[last_scene])
+            sys.exit(0)
+        except ResizeScreenError as e:
+            last_scene = e.scene
+
+if __name__ == "__main__":
+    main()
+

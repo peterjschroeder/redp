@@ -1,0 +1,43 @@
+#!/usr/bin/python3
+from redpull import *
+
+# Configuration
+path_config = os.path.expanduser("~/.config/redpull/config")
+config = configparser.ConfigParser()
+if os.path.exists(path_config):
+    config.read(path_config)
+
+    reddit_client_id = config['redpull']['reddit_client_id']
+    reddit_client_secret = config['redpull']['reddit_client_secret']
+    reddit_username = config['redpull']['reddit_username']
+    reddit_password = config['redpull']['reddit_password']
+    path_log = os.path.expanduser(config['redpull']['path_log'])
+else:
+    logging.error("Config file not found. Setup redpull first.")
+    exit()
+
+reddit = praw.Reddit(client_id=reddit_client_id, client_secret=reddit_client_secret, password=reddit_password, user_agent='redpull', username=reddit_username)
+
+# Logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(path_log+"/redpush.log"),
+    ]
+)
+
+def main():
+    try:
+        if len(sys.argv) > 1:
+            stdin = sys.stdin.read()
+            message_id = re.search("Message-ID: <(.*)@.*>$", stdin, re.MULTILINE).group(1)
+            message = re.split(os.linesep + os.linesep, stdin, maxsplit=1, flags=re.MULTILINE)[1].replace('\n', '\n\n')
+            reddit.comment(message_id).reply(message)
+            return True
+    except as errors:
+        logging.error(errors)
+        return False
+
+if __name__ == "__main__":
+    main()
