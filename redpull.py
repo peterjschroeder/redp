@@ -212,7 +212,7 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
 
     # Bail out totally under certain conditions so as to not check comments
     if ((submission.num_comments < minimum_comments) or (submission.score < minimum_score) or (float(submission.created_utc) < max_age) or 
-            (float(submission.created_utc) < expiration)):
+            (float(submission.created_utc) < (time.time() - expiration))):
         return
 
     # Write submission
@@ -366,7 +366,7 @@ def remove_expired_messages(subscribed):
         try:
             # Run through the loop twice so we can remove all comments for an expired submission.
             for key, msg in maildir.iteritems():
-                if datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < time.time() - (int(i[4])*86400) and not msg['References']:
+                if datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400)) and not msg['References']:
                     submissions.append(msg['Message-ID'])
                     to_remove.append(key)
             for key, msg in maildir.iteritems():
