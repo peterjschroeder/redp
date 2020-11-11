@@ -64,7 +64,8 @@ def load_database():
         print ("Updating database.")
         urllib.request.urlretrieve(url+fileurl, "%s/%s" % (path_share, filename))
 
-        filter_database("%s/%s" % (path_share, filename))
+        if db_filter == "yes":
+            filter_database("%s/%s" % (path_share, filename))
 
         # If database update was successful than remove any old databases
         for i in databases:
@@ -136,6 +137,10 @@ def redpick(screen, scene):
     screen.play([Scene([mainFrame(screen)], -1)], stop_on_resize=True, start_scene=scene, allow_int=True)
 
 def main():
+    if len(sys.argv) > 1:
+        if str(sys.argv[1]) == "--quick":
+            create_subscriptions()
+
     load_database()
 
     last_scene = None

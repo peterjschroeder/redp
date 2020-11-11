@@ -17,7 +17,7 @@ edit ~/.config/redp/config\
 Fill in reddit_username and reddit_password\
 client_secret is the secret on the apps page\
 client_id is under personal use script on the apps page\
-redpick.py\
+redpick.py --quick\
 redpull.py\
 Add to crontab. Example: @hourly redpull.py --quiet\
 \

@@ -19,6 +19,10 @@ config_defaults_redp = {
         'path_maildir': '~/Mail/Reddit',
         }
 
+config_defaults_redpick = {
+        'db_filter': 'no'
+        }
+
 config_defaults_redpull = {
         'skip_automoderator': 'no',
         'autoquote': 'no',
@@ -49,6 +53,8 @@ if os.path.exists(os.path.join(xdg_config_home, 'redp/config')):
     reddit_password = config['redp']['reddit_password']
     path_maildir = os.path.expanduser(config['redp']['path_maildir'])
 
+    db_filter = config['redpick']['db_filter']
+
     skip_automoderator = os.path.expanduser(config['redpull']['skip_automoderator'])
     autoquote = os.path.expanduser(config['redpull']['autoquote'])
     attachments = config['redpull']['attachments']
@@ -63,6 +69,8 @@ else:
 
     for i in config_defaults_redp:
         config['redp'][i] = config_defaults_redp[i]
+    for i in config_defaults_redpick:
+        config['redpick'][i] = config_defaults_redpull[i]
     for i in config_defaults_redpull:
         config['redpull'][i] = config_defaults_redpull[i]
 
