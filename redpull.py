@@ -41,6 +41,9 @@ if os.path.exists(os.path.join(xdg_config_home, 'redp/config')):
     for i in config_defaults_redp:
         if not config.has_option('redp', i):
             config['redp'][i] = config_defaults_redp[i]
+    for i in config_defaults_redpick:
+        if not config.has_option('redpick', i):
+            config['redpick'][i] = config_defaults_redpick[i]
     for i in config_defaults_redpull:
         if not config.has_option('redpull', i):
             config['redpull'][i] = config_defaults_redpull[i]
@@ -65,12 +68,13 @@ else:
     print("Creating config file. Modify as needed before running again.")
 
     config.add_section('redp')
+    config.add_section('redpick')
     config.add_section('redpull')
 
     for i in config_defaults_redp:
         config['redp'][i] = config_defaults_redp[i]
     for i in config_defaults_redpick:
-        config['redpick'][i] = config_defaults_redpull[i]
+        config['redpick'][i] = config_defaults_redpick[i]
     for i in config_defaults_redpull:
         config['redpull'][i] = config_defaults_redpull[i]
 
@@ -378,7 +382,8 @@ def remove_expired_messages(subscribed):
                     submissions.append(msg['Message-ID'])
                     to_remove.append(key)
             for key, msg in maildir.iteritems():
-                if msg['References'] and msg['References'].split(' ')[0] in submissions:
+                if (datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400)) or 
+                        msg['References'] and msg['References'].split(' ')[0] in submissions):
                     to_remove.append(key)
             maildir.lock()
             try:
