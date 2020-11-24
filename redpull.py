@@ -275,8 +275,7 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
             continue
 
         if ((float(comment.created_utc) < max_age) or
-                (float(comment.created_utc) < expiration) or 
-                (comment.author and comment.author.name == 'AutoModerator')):
+                (skip_automoderator and comment.author and comment.author.name == 'AutoModerator')):
             write_skipped(submission.subreddit, comment.id)
             continue
         logging.info("%s: Retrieving comment %s." %  (submission.subreddit, comment.id))
