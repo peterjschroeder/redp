@@ -375,26 +375,23 @@ def remove_expired_messages(subscribed):
         submissions = []
         to_remove = []
 
-        try:
-            # Run through the loop twice so we can remove all comments for an expired submission.
-            for key, msg in maildir.iteritems():
-                if datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400)) and not msg['References']:
-                    submissions.append(msg['Message-ID'])
-                    to_remove.append(key)
-            for key, msg in maildir.iteritems():
-                if (datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400)) or 
-                        msg['References'] and msg['References'].split(' ')[0] in submissions):
-                    to_remove.append(key)
-            maildir.lock()
-            try:
-                for key in to_remove:
-                    logging.info("%s Removing %s." % (i[0], key))
-                    maildir.remove(key)
-            finally:
-                maildir.flush()
-                maildir.close()
-        except:
-            continue
+        # Run through the loop twice so we can remove all comments for an expired submission.
+        for key, msg in maildir.iteritems():
+            if datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400)) and not msg['References']:
+                submissions.append(msg['Message-ID'])
+                to_remove.append(key)
+        for key, msg in maildir.iteritems():
+            if (msg['References'] and (datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400)) or (msg['References'].split(' ')[0] in submissions))):
+                to_remove.append(key)
+
+        maildir.lock()
+
+        for key in to_remove:
+            logging.info("%s Removing %s." % (i[0], key))
+            maildir.remove(key)
+
+        maildir.flush()
+        maildir.close()
 
 def main():
     try:
