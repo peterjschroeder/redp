@@ -346,7 +346,9 @@ def get_attachment(url, msg):
         # Reddit thinks it's cute allowing unicode in urls
         response = urlopen(Request(url.encode('ascii', errors='ignore').decode(), 
             headers={'User-Agent': 'Mozilla/5.0'}), timeout=10)
-    except urllib.error.HTTPError as e:
+        info = response.info()
+        imgdata = response.read()
+    except (urllib.error.HTTPError, socket.timeout) as e:
         # FIXME: Handle this with wayback machine.
         if e.code == 404:
             return False
@@ -354,9 +356,6 @@ def get_attachment(url, msg):
             return False
     except Exception:
         return False
-
-    info = response.info()
-    imgdata = response.read()
 
     exclude_mimetypes = ["application/x-httpd-php", "text/asp", "text/css", "text/html", "text/javascript"]
     if info.get_content_maintype() in attachments and info.get_content_type() not in exclude_mimetypes:
@@ -377,7 +376,8 @@ def remove_expired_messages(subscribed):
 
         # Run through the loop twice so we can remove all comments for an expired submission.
         for key, msg in maildir.iteritems():
-            if datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400)) and not msg['References']:
+            if (msg['Date'] and (datetime.datetime.strptime(msg['Date'], "%a, %d %b %Y %H:%M:00 -0000").timestamp() < (time.time() - (int(i[4])*86400))) 
+                    and not msg['References']):
                 submissions.append(msg['Message-ID'])
                 to_remove.append(key)
         for key, msg in maildir.iteritems():
