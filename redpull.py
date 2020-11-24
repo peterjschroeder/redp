@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import configparser, contextlib, csv, datetime, gallery_dl, io, logging, mailbox, os, pidfile, praw, re, shutil, sys, tempfile, time, urllib, youtube_dl
+import configparser, contextlib, csv, datetime, gallery_dl, io, logging, mailbox, os, pidfile, praw, re, shutil, socket, sys, tempfile, time, urllib, youtube_dl
 from archivenow import archivenow
 from email.headerregistry import Address
 from email.message import EmailMessage
