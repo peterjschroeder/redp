@@ -204,7 +204,7 @@ def get_submissions(subreddit, use_pushshift):
     retrieved = get_retrieved(subreddit[0])
 
     if use_pushshift:
-        for j in set(list(api.search_submissions(after=int(float(subreddit[1])), subreddit=subreddit[0], limit=None))):
+        for j in set(list(api.search_submissions(after=max(int(float(subreddit[1])), time.time() - int(subreddit[4])*86400), subreddit=subreddit[0], limit=None))):
             write_messages(j, retrieved, int(float(subreddit[1])), int(subreddit[2]), 
                     int(subreddit[3]), int(subreddit[4])*86400, False)
     else:
@@ -329,8 +329,11 @@ def get_attachment(url, msg):
                 try:
                     ydl.download([url])
                 except Exception:
-                    return False
-                    
+                    try:
+                        ydl.download(["http://web.archive.org/web/"+url])
+                    except:
+                        return False
+
                 videos = os.listdir(dir_download)
                 if len(videos) > 0:
                     for i in videos:
