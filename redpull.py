@@ -204,8 +204,7 @@ def get_submissions(subreddit, use_pushshift):
     retrieved = get_retrieved(subreddit[0])
 
     if use_pushshift:
-#        for j in set(list(api.search_submissions(after=max(int(float(subreddit[1])), (time.time() - int(subreddit[4])*86400)), subreddit=subreddit[0], limit=None))):
-        for j in set(list(api.search_submissions(after=int(float(subreddit[1])), subreddit=subreddit[0], limit=None))):
+        for j in set(list(api.search_submissions(after=max(int(float(subreddit[1])), int(time.time() - int(subreddit[4])*86400)), subreddit=subreddit[0], limit=None))):
             write_messages(j, retrieved, int(float(subreddit[1])), int(subreddit[2]), 
                     int(subreddit[3]), int(subreddit[4])*86400, False)
     else:
@@ -354,14 +353,14 @@ def get_attachment(url, msg):
     except:
         # FIXME: Lets do this without repeating code.
         try:
-            logging.info("Dead link. Trying on the wayback machine.")
+            logging.info("Dead link. Checking if the link is in the wayback machine.")
             url = "http://web.archive.org/web/"+url
             response = urlopen(Request(url.encode('ascii', errors='ignore').decode(), 
                 headers={'User-Agent': 'Mozilla/5.0'}), timeout=10)
             info = response.info()
             imgdata = response.read()
         except:
-            logging.warning("Link not in the wayback machine. Attachment skipped. Embeding url instead.")
+            logging.warning("Link not in the wayback machine.")
             return False
 
     exclude_mimetypes = ["application/x-httpd-php", "text/asp", "text/css", "text/html", "text/javascript"]
