@@ -10,6 +10,6 @@ setup(
         author_email='peterjschroeder@gmail.com', 
         url='https://github.com/peterjschroeder/redp',
         scripts=['redpick.py', 'redpull.py', 'redpush.py'],
-        install_requires=['archivenow', 'asciimatics', 'better-profanity', 'configparser', 'gallery-dl', 'natsort', 'praw', 'psaw', 'python-pidfile', 'tqdm', 'xdg', 'youtube-dl']
+        install_requires=['archivenow', 'asciimatics', 'better-profanity', 'configparser', 'gallery-dl @ git+https://github.com/mikf/gallery-dl.git', 'natsort', 'praw', 'psaw', 'python-pidfile', 'tqdm', 'xdg', 'youtube-dl']
 )
 
