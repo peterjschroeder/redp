@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from importlib.machinery import SourceFileLoader
+redpull = SourceFileLoader("redpull", "redpull").load_module()
 from redpull import *
 
 # Configuration
