@@ -306,6 +306,7 @@ def get_attachment(url, msg):
             gallery_dl.config.set(('extractor',), "directory", "")
             gallery_dl.config.set(('extractor',), "base-directory", dir_download)
             gallery_dl.config.set(('output',), 'mode', 'null')
+            gallery_dl.config.set(('timeout',), '10', '')
             gallery_dl.job.DownloadJob(url).run()
 
             images = os.listdir(dir_download)
@@ -349,7 +350,7 @@ def get_attachment(url, msg):
         response = urlopen(Request(url.encode('ascii', errors='ignore').decode(), 
             headers={'User-Agent': 'Mozilla/5.0'}), timeout=10)
         info = response.info()
-        imgdata = response.read()
+        fdata = response.read()
     except:
         # FIXME: Lets do this without repeating code.
         try:
@@ -358,15 +359,15 @@ def get_attachment(url, msg):
             response = urlopen(Request(url.encode('ascii', errors='ignore').decode(), 
                 headers={'User-Agent': 'Mozilla/5.0'}), timeout=10)
             info = response.info()
-            imgdata = response.read()
+            fdata = response.read()
         except:
             logging.warning("Link not in the wayback machine.")
             return False
 
     exclude_mimetypes = ["application/x-httpd-php", "text/asp", "text/css", "text/html", "text/javascript"]
     if info.get_content_maintype() in attachments and info.get_content_type() not in exclude_mimetypes:
-        msg.add_attachment(imgdata, maintype=info.get_content_maintype(), subtype=info.get_content_subtype(), 
-        filename=re.findall("filename=(.+)", r.headers["Content-Disposition"])[0] 
+        msg.add_attachment(fdata, maintype=info.get_content_maintype(), subtype=info.get_content_subtype(), 
+        filename=re.findall("filename=(.+)", response.headers["Content-Disposition"])[0] 
         if "Content-Disposition" in response.headers.keys() else url.split("/")[-1])
         return True
 
