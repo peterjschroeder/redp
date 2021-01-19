@@ -318,7 +318,7 @@ def get_attachment(url, msg):
             gallery_dl.config.set(('extractor',), "directory", "")
             gallery_dl.config.set(('extractor',), "base-directory", dir_download)
             gallery_dl.config.set(('output',), 'mode', 'null')
-            gallery_dl.config.set(('timeout',), 10)
+            gallery_dl.config.set(('extractor',), "timeout", 10)
             gallery_dl.job.DownloadJob(url).run()
 
             images = os.listdir(dir_download)
