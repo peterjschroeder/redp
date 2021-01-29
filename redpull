@@ -87,7 +87,7 @@ else:
 reddit = praw.Reddit(client_id=reddit_client_id, client_secret=reddit_client_secret, password=reddit_password, user_agent='redp by /u/peterjschroeder github.com/peterjschroeder/redp', username=reddit_username)
 
 api = PushshiftAPI(reddit)
-#database = sqlite3.connect(os.path.join(xdg_cache_home, 'redp.db'))
+database = sqlite3.connect(os.path.join(xdg_cache_home, 'redp/redp.db'))
 
 # Logging
 os.makedirs(os.path.join(xdg_cache_home, 'redp'), exist_ok=True)
@@ -121,76 +121,50 @@ def get_subscriptions():
     return subscribed
 
 def get_numcomments(submission):
-    if not os.path.exists('%s/%s/.numcomments' % (path_maildir, submission.subreddit)):
+    cursor = database.cursor()
+
+    try:
+        cursor.execute('''SELECT numcomments from `{}_submissions` WHERE submission = ?'''.format(str(submission.subreddit)), (submission.id,))
+        return (count[0])
+    except:
         return 0
-    else:
-        count = 0
 
-        with open('%s/%s/.numcomments' % (path_maildir, submission.subreddit)) as f:
-            reader = csv.reader(f, delimiter='\t')
-            for i in reader:
-                if i[0] == submission.id:
-                    count = int(i[1])
-        f.close()
+def get_retrieved_submissions(subscription):
+    cursor = database.cursor()
 
-        if os.path.exists('%s/%s/.skipped' % (path_maildir, submission.subreddit)):
-            with open('%s/%s/.skipped' % (path_maildir, submission.subreddit)) as f:
-                reader = csv.reader(f, delimiter='\t')
-                for i in reader:
-                    if i[0] == submission.id:
-                        count += int(i[1])
-            f.close()
+    try:
+        cursor.execute('''SELECT submission from `{}_submissions`'''.format(str(subscription)))
+        return [x[0] for x in cursor.fetchall()]
+    except:
+        return []
 
-        return count
+def get_seen_comments(submission):
+    cursor = database.cursor()
 
-    return 0
+    try:
+        cursor.execute('''SELECT comment from `{}_comments` WHERE submission = ?'''.format(str(submission.subreddit)), (submission.id,))
+        return [x[0] for x in cursor.fetchall()]
+    except:
+        return []
 
-def write_numcomments(submission, numcomments):
-#    c = database.cursor()
+def write_retrieved_submission(submission):
+    cursor = database.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS `{}_submissions` (submission TEXT, numcomments INTEGER, date FLOAT)'.format(str(submission.subreddit)))
+    cursor.execute('''INSERT OR REPLACE INTO `{}_submissions` VALUES (?, 0, ?)'''.format(str(submission.subreddit)), (submission.id, str(submission.created_utc)))
+    database.commit()
 
-#    c.execute(''' SELECT count(name) FROM sqlite_master WHERE type='table' AND name='%s' ''' % submission.subreddit)
+def write_retrieved_comment(comment):
+    cursor = database.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS `{}_comments` (comment TEXT, submission TEXT, date FLOAT, status TEXT)'.format(str(comment.subreddit)))
+    cursor.execute('''INSERT OR REPLACE INTO `{}_comments` VALUES (?, ?, ?, "retrieved")'''.format(str(comment.subreddit)), (comment.id, comment.submission.id, str(comment.created_utc)))
+    cursor.execute('''UPDATE `{}_submissions` SET numcomments = numcomments+1 WHERE submission = ?'''.format(str(comment.submission.subreddit)), (comment.submission.id,))
+    database.commit()
 
-#    if c.fetchone()[0]==1 :
-#	    print('Table exists.')
-#    else:
-#        c.execute("CREATE TABLE IF NOT EXISTS %s_submissions (submission TEXT, numcomments INTEGER)" % submission.subreddit)
-
-#    database.commit()
-
-    reader = []
-
-    if os.path.exists('%s/%s/.numcomments' % (path_maildir, submission.subreddit)):
-        reader = list(csv.reader(open('%s/%s/.numcomments' % (path_maildir, submission.subreddit)), 
-            delimiter='\t'))
-
-    with open('%s/%s/.numcomments' % (path_maildir, submission.subreddit), 'w') as f:
-        writer = csv.writer(f, delimiter='\t')
-
-        for i in reader:
-            if i[0] != submission.id:
-                writer.writerow([i[0], i[1]])
-
-        writer.writerow([submission.id, numcomments])
-
-def get_retrieved(subscription):
-    if not os.path.exists('%s/%s/.retrieved' % (path_maildir, subscription)):
-        retrieved = []
-    else:
-        l = open('%s/%s/.retrieved' % (path_maildir, subscription), 'r+', encoding='utf-8')
-        retrieved = l.read().splitlines()
-        l.close()
-
-    return retrieved
-
-def write_retrieved(subscription, message):
-    l = open('%s/%s/.retrieved' % (path_maildir, subscription), 'a', encoding='utf-8')
-    l.write("%s\n" % message)
-    l.close()
-
-def write_skipped(subscription, message):
-    l = open('%s/%s/.skipped' % (path_maildir, subscription), 'a', encoding='utf-8')
-    l.write("%s\n" % message)
-    l.close()
+def write_skipped_comment(comment):
+    cursor = database.cursor()
+    cursor.execute('CREATE TABLE IF NOT EXISTS `{}_comments` (submission TEXT, submission TEXT, date FLOAT, status TEXT)'.format(str(comment.subreddit)))
+    cursor.execute('''INSERT OR REPLACE INTO `{}_comments` VALUES (?, ?, ?, "skipped")'''.format(str(comment.subreddit)), (comment.id, comment.submission.id, str(comment.created_utc)))
+    database.commit()
 
 def quote_message(submission, comment):
     quote = ""
@@ -213,11 +187,10 @@ def quote_message(submission, comment):
 
 def get_submissions(subreddit, use_pushshift):
     logging.info("Fetching submissions for %s." % subreddit[0])
-    retrieved = get_retrieved(subreddit[0])
 
     if use_pushshift:
         for j in set(list(api.search_submissions(after=max(int(float(subreddit[1])), int(time.time() - int(subreddit[4])*86400)), subreddit=subreddit[0], limit=None))):
-            write_messages(j, retrieved, int(float(subreddit[1])), int(subreddit[2]), 
+            write_messages(j, int(float(subreddit[1])), int(subreddit[2]), 
                     int(subreddit[3]), int(subreddit[4])*86400, False)
     else:
         for j in set(list(reddit.subreddit(subreddit[0]).new(limit=100)) +
@@ -225,10 +198,10 @@ def get_submissions(subreddit, use_pushshift):
                 list(reddit.subreddit(subreddit[0]).rising(limit=100)) +
                 list(reddit.subreddit(subreddit[0]).hot(limit=100)) +
                 list(reddit.subreddit(subreddit[0]).top("all"))):
-            write_messages(j, retrieved, int(float(subreddit[1])), int(subreddit[2]), 
+            write_messages(j, int(float(subreddit[1])), int(subreddit[2]), 
                     int(subreddit[3]), int(subreddit[4])*86400, True)
 
-def write_messages(submission, retrieved, max_age, minimum_comments, minimum_score, expiration, private):
+def write_messages(submission, max_age, minimum_comments, minimum_score, expiration, private):
     # Create directories if they do not exist
     os.makedirs("%s/%s/cur" % (path_maildir, submission.subreddit), exist_ok=True)
     os.makedirs("%s/%s/new" % (path_maildir, submission.subreddit), exist_ok=True)
@@ -240,7 +213,7 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
         return
 
     # Write submission
-    if (submission.id not in retrieved):
+    if (submission.id not in get_retrieved_submissions(submission.subreddit)):
         logging.info("%s: Retrieving submission %s." % (submission.subreddit, submission.id))
         f = open('%s/%s/new/%s' % (path_maildir, submission.subreddit, submission.id), 'wb')
         msg = EmailMessage()
@@ -266,7 +239,7 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
 
         f.write(bytes(msg))
         f.close()
-        write_retrieved(submission.subreddit, submission.id)
+        write_retrieved_submission(submission)
 
     # Don't look for comments if we already have more or equal to
     if get_numcomments(submission) >= submission.num_comments:
@@ -279,16 +252,16 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
     else:
         comments = api.search_comments(after=max_age, subreddit=submission.subreddit, submission_id=submission.id, limit=None)
 
-    numcomments = get_numcomments(submission)
+    seen_comments = get_seen_comments(submission)
 
     for comment in comments:
         # Check for new comments
-        if (comment.id in retrieved):
+        if (comment.id in seen_comments):
             continue
 
         if ((float(comment.created_utc) < max_age) or
                 (skip_automoderator and comment.author and comment.author.name == 'AutoModerator')):
-            write_skipped(submission.subreddit, comment.id)
+            write_skipped_comment(comment)
             continue
         logging.info("%s: Retrieving comment %s." %  (submission.subreddit, comment.id))
         f = open('%s/%s/new/%s' % (path_maildir, submission.subreddit, comment.id), 'wb')
@@ -303,11 +276,7 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
         msg.set_content("%s%s" % (quote_message(submission, comment), comment.body))
         f.write(bytes(msg))
         f.close()
-        write_retrieved(submission.subreddit, comment.id)
-        numcomments += 1
-    # Done outside the loop to avoid tons of read/writes.
-    # Drawback is, if the loop is interupted, the new count isn't stored which will cause a recheck even if we have all the comments.
-    write_numcomments(submission, numcomments)
+        write_retrieved_comment(comment)
 
 def get_attachment(url, msg):
     # Image galleries
@@ -366,7 +335,7 @@ def get_attachment(url, msg):
     except:
         # FIXME: Lets do this without repeating code.
         try:
-            logging.info("Dead link. Checking if the link is in the wayback machine.")
+            logging.warning("Dead link. Checking if the link is in the wayback machine.")
             url = "http://web.archive.org/web/"+url
             response = urlopen(Request(url.encode('ascii', errors='ignore').decode(), 
                 headers={'User-Agent': 'Mozilla/5.0'}), timeout=10)
