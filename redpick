@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from urllib.request import urlopen, urlparse, Request
-import tqdm, urllib.request
+import os, tqdm, urllib.request
 from asciimatics.event import KeyboardEvent
 from asciimatics.exceptions import NextScene, ResizeScreenError, StopApplication
 from asciimatics.scene import Scene
@@ -10,7 +10,8 @@ from bs4 import BeautifulSoup
 from collections import defaultdict
 from better_profanity import profanity
 from importlib.machinery import SourceFileLoader
-redpull = SourceFileLoader("redpull", "redpull").load_module()
+importlib.machinery.SOURCE_SUFFIXES.append('')
+redpull = SourceFileLoader("redpull", os.path.dirname(__file__)+"/redpull").load_module()
 from redpull import *
 
 def create_subscriptions():
