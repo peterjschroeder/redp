@@ -10,7 +10,6 @@ from bs4 import BeautifulSoup
 from collections import defaultdict
 from better_profanity import profanity
 from importlib.machinery import SourceFileLoader
-importlib.machinery.SOURCE_SUFFIXES.append('')
 redpull = SourceFileLoader("redpull", os.path.dirname(__file__)+"/redpull").load_module()
 from redpull import *
 
