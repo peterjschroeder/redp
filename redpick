@@ -142,7 +142,7 @@ def main():
     if len(sys.argv) > 1:
         if str(sys.argv[1]) == "--quick":
             create_subscriptions()
-            return
+            return sys.exit()
 
     load_database()
 
