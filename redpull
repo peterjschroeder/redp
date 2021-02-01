@@ -87,7 +87,10 @@ else:
 reddit = praw.Reddit(client_id=reddit_client_id, client_secret=reddit_client_secret, password=reddit_password, user_agent='redp by /u/peterjschroeder github.com/peterjschroeder/redp', username=reddit_username)
 
 api = PushshiftAPI(reddit)
+
+# Databse setup
 database = sqlite3.connect(os.path.join(xdg_cache_home, 'redp/redp.db'))
+database.execute('PRAGMA journal_mode = WAL')
 
 # Logging
 os.makedirs(os.path.join(xdg_cache_home, 'redp'), exist_ok=True)
