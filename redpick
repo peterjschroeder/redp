@@ -85,12 +85,13 @@ def load_database():
 
         subscriptions = get_subscriptions()
         
-        for i in list(csv.reader(f, delimiter=','))[1:]:
+        for i in list(csv.reader((x.replace('\0', '') for x in f), delimiter=','))[1:]:
             if int(i[3]) > 100:
                 if any(i[0] in sublist for sublist in subscriptions):
                     database.append(['S', i[0], i[1].replace('\n', ' ')[:80], i[2], i[3]])
                 else:
                     database.append([' ', i[0], i[1].replace('\n', ' ')[:80], i[2], i[3]])
+
 
         database.sort(key=lambda x:x[1])
         databasef = database.copy()
