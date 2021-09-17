@@ -202,7 +202,7 @@ def get_submissions(subreddit, use_pushshift):
     retrieved = get_retrieved(subreddit[0])
 
     if use_pushshift:
-        for j in set(list(api.search_submissions(after=max(int(float(subreddit[1])), int(time.time() - int(subreddit[4])*86400)), subreddit=subreddit[0], limit=None))):
+        for j in set(list(api.search_submissions(after=int(subreddit[1]), subreddit=subreddit[0], limit=None))):
             write_messages(j, retrieved, int(float(subreddit[1])), int(subreddit[2]), 
                     int(subreddit[3]), False)
     else:
@@ -262,7 +262,7 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
         submission.comments.replace_more(limit=None)
         comments = submission.comments.list()
     else:
-        comments = api.search_comments(after=max_age, subreddit=submission.subreddit, submission_id=submission.id, limit=None)
+        comments = api.search_comments(after=max_age, subreddit=submission.subreddit, link_id=submission.id, limit=None)
 
     numcomments = get_numcomments(submission)
 
