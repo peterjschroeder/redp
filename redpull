@@ -221,7 +221,7 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
     os.makedirs("%s/%s/tmp" % (path_maildir, submission.subreddit), exist_ok=True)
 
     # Bail out totally under certain conditions so as to not check comments
-    if ((submission.num_comments < minimum_comments) or (submission.score < minimum_score) or (float(submission.created_utc) < max_age)):
+    if ((submission.num_comments < minimum_comments) or (submission.score < minimum_score) or (int(submission.created_utc) < max_age)):
         return
 
     # Write submission
@@ -271,10 +271,10 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
         if (comment.id in retrieved):
             continue
 
-        if ((float(comment.created_utc) < max_age) or
-                (skip_automoderator and comment.author and comment.author.name == 'AutoModerator')):
+        if ((int(comment.created_utc) < max_age) or (skip_automoderator and comment.author and comment.author.name == 'AutoModerator')):
             write_skipped(submission.subreddit, comment.id)
             continue
+
         logging.info("%s: Retrieving comment %s." %  (submission.subreddit, comment.id))
         f = open('%s/%s/new/%s' % (path_maildir, submission.subreddit, comment.id), 'wb')
         msg = EmailMessage()
