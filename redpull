@@ -281,8 +281,8 @@ def write_messages(submission, retrieved, max_age, minimum_comments, minimum_sco
         msg['From'] = Address(comment.author.name if comment.author else "deleted", comment.author.name if comment.author else "deleted", "reddit.com")
         msg['Subject'] = submission.title
         msg['Date'] = datetime.datetime.utcfromtimestamp(comment.created_utc).strftime("%a, %d %b %Y %H:%M:00")
-        msg['References'] = "<%s@reddit.com>%s" % (submission.id, '' if comment.parent() == submission.id else ' <%s@reddit.com>' % comment.parent())
-        msg['In-Reply-To'] = "<%s@reddit.com>" % comment.parent()
+        msg['References'] = "<%s@reddit.com>%s" % (submission.id, '' if comment.parent_id == submission.id else ' <%s@reddit.com>' % comment.parent_id)
+        msg['In-Reply-To'] = "<%s@reddit.com>" % comment.parent_id
         msg['Message-ID'] = "<%s@reddit.com>" % comment.id
         msg['Content-Location'] = comment.permalink
         msg.set_content("%s%s" % (quote_message(submission, comment), comment.body))
