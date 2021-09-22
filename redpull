@@ -374,12 +374,15 @@ def main():
     try:
         with pidfile.PIDFile(os.path.join(xdg_cache_home, 'redp/redpull.pid')):
             force_praw = False
+            keep_running = False
 
             if len(sys.argv) > 1:
                 if str(sys.argv[1]) == "--quiet":
                     logging.getLogger().removeHandler(logging.getLogger().handlers[1])
                 elif str(sys.argv[1]) == "--force-praw":
                     force_praw = True
+                elif str(sys.argv[1]) == "--keep-running":
+                    keep_running = True
 
             subscribed = get_subscriptions()
 
@@ -388,6 +391,9 @@ def main():
                     get_submissions(i, False)
                 else:
                     get_submissions(i, True)
+
+            if keep_running:
+                main()
 
     except pidfile.AlreadyRunningError:
         logging.error('redpull is already running.')
