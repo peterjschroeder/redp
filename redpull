@@ -25,7 +25,6 @@ config_defaults_redpick = {
 
 config_defaults_redpull = {
         'skip_automoderator': 'no',
-        'autoquote': 'no',
         'attachments': 'image,text',
         'attachments_max_size': '10000',
         'archive': 'no'
@@ -58,7 +57,6 @@ if os.path.exists(os.path.join(xdg_config_home, 'redp/config')):
     db_filter = config['redpick']['db_filter']
 
     skip_automoderator = os.path.expanduser(config['redpull']['skip_automoderator'])
-    autoquote = os.path.expanduser(config['redpull']['autoquote'])
     attachments = config['redpull']['attachments']
     attachment_max_size = config['redpull']['attachments_max_size']
     archive = config['redpull']['archive']
@@ -171,25 +169,6 @@ def write_skipped_comment(comment):
     database.execute('''UPDATE `{}_submissions` SET numcomments = numcomments+1 WHERE submission = ?'''.format(str(comment.submission.subreddit)), (comment.submission.id,))
     database.commit()
 
-def quote_message(submission, comment):
-    quote = ""
-
-    if autoquote == "no" or comment.parent().id == submission.id:
-        return quote
-
-    quote_comments = []
-
-    while comment.parent().id != submission.id:
-        quote_comments.append(comment.parent())
-        comment = comment.parent()
-
-    quote_list = []
-
-    for i in range(0, len(quote_comments)):
-        quote = "%s\n\n" % (re.sub('^', (">" * (i+1)) + " ", "%s wrote:\n%s" % (quote_comments[i].author, quote_comments[i].body), flags=re.M)) + quote
-
-    return quote
-
 def get_submissions(subreddit, use_pushshift):
     logging.info("Fetching submissions for %s." % subreddit[0])
 
@@ -275,7 +254,7 @@ def write_messages(submission, max_age, minimum_comments, minimum_score, private
         msg['In-Reply-To'] = "<%s@reddit.com>" % comment.parent_id
         msg['Message-ID'] = "<%s@reddit.com>" % comment.id
         msg['Content-Location'] = comment.permalink
-        msg.set_content("%s%s" % (quote_message(submission, comment), comment.body))
+        msg.set_content(comment.body)
         f.write(bytes(msg))
         f.close()
         write_retrieved_comment(comment)
