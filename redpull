@@ -153,19 +153,19 @@ def get_seen_comments(submission):
         cursor.close()
 
 def write_retrieved_submission(submission):
-    database.execute('CREATE TABLE IF NOT EXISTS `{}_submissions` (submission TEXT, numcomments INTEGER, date FLOAT)'.format(str(submission.subreddit)))
-    database.execute('''INSERT OR REPLACE INTO `{}_submissions` VALUES (?, 0, ?)'''.format(str(submission.subreddit)), (submission.id, str(submission.created_utc)))
+    database.execute('CREATE TABLE IF NOT EXISTS `{}_submissions` (submission TEXT, numcomments INTEGER)'.format(str(submission.subreddit)))
+    database.execute('''INSERT OR REPLACE INTO `{}_submissions` VALUES (?, 0)'''.format(str(submission.subreddit)), (submission.id,))
     database.commit()
 
 def write_retrieved_comment(comment):
-    database.execute('CREATE TABLE IF NOT EXISTS `{}_comments` (comment TEXT, submission TEXT, date FLOAT, status TEXT)'.format(str(comment.subreddit)))
-    database.execute('''INSERT OR REPLACE INTO `{}_comments` VALUES (?, ?, ?, "retrieved")'''.format(str(comment.subreddit)), (comment.id, comment.submission.id, str(comment.created_utc)))
+    database.execute('CREATE TABLE IF NOT EXISTS `{}_comments` (comment TEXT, submission TEXT, status TEXT)'.format(str(comment.subreddit)))
+    database.execute('''INSERT OR REPLACE INTO `{}_comments` VALUES (?, ?, "retrieved")'''.format(str(comment.subreddit)), (comment.id, comment.submission.id))
     database.execute('''UPDATE `{}_submissions` SET numcomments = numcomments+1 WHERE submission = ?'''.format(str(comment.submission.subreddit)), (comment.submission.id,))
     database.commit()
 
 def write_skipped_comment(comment):
-    database.execute('CREATE TABLE IF NOT EXISTS `{}_comments` (comment TEXT, submission INTEGER, date FLOAT, status TEXT)'.format(str(comment.subreddit)))
-    database.execute('''INSERT OR REPLACE INTO `{}_comments` VALUES (?, ?, ?, "skipped")'''.format(str(comment.subreddit)), (comment.id, comment.submission.id, str(comment.created_utc)))
+    database.execute('CREATE TABLE IF NOT EXISTS `{}_comments` (comment TEXT, submission INTEGER, status TEXT)'.format(str(comment.subreddit)))
+    database.execute('''INSERT OR REPLACE INTO `{}_comments` VALUES (?, ?, "skipped")'''.format(str(comment.subreddit)), (comment.id, comment.submission.id))
     database.execute('''UPDATE `{}_submissions` SET numcomments = numcomments+1 WHERE submission = ?'''.format(str(comment.submission.subreddit)), (comment.submission.id,))
     database.commit()
 
