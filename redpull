@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import configparser, contextlib, csv, datetime, gallery_dl, io, logging, mailbox, os, pidfile, praw, re, shutil, socket, sqlite3, sys, tempfile, time, urllib, youtube_dl
+import configparser, contextlib, csv, gallery_dl, io, logging, mailbox, os, pidfile, praw, re, shutil, socket, sqlite3, sys, tempfile, time, urllib, youtube_dl
 from archivenow import archivenow
+from datetime import datetime
 from email.headerregistry import Address
 from email.message import EmailMessage
 from email.mime.text import MIMEText
@@ -82,7 +83,7 @@ else:
 # API Setup
 reddit = praw.Reddit(client_id=reddit_client_id, client_secret=reddit_client_secret, password=reddit_password, user_agent='redp by /u/peterjschroeder github.com/peterjschroeder/redp', username=reddit_username)
 
-api = PushshiftAPI(reddit)
+api = PushshiftAPI(r=reddit)
 
 # Databse setup
 os.makedirs(os.path.join(xdg_cache_home, 'redp'), exist_ok=True)
@@ -200,7 +201,7 @@ def write_messages(submission, max_age, minimum_comments, minimum_score, private
         msg = EmailMessage()
         msg['From'] = Address(submission.author.name if submission.author else "deleted", submission.author.name if submission.author else "deleted", "reddit.com")
         msg['Subject'] = submission.title
-        msg['Date'] = datetime.datetime.utcfromtimestamp(submission.created_utc).strftime("%a, %d %b %Y %H:%M:00")
+        msg['Date'] = datetime.utcfromtimestamp(submission.created_utc).strftime("%a, %d %b %Y %H:%M:00")
         msg['Message-ID'] = "<%s@reddit.com>" % submission.id
         msg['Content-Location'] = submission.permalink
 
@@ -227,12 +228,8 @@ def write_messages(submission, max_age, minimum_comments, minimum_score, private
         return
 
     # Write comments
-    if private:
-        submission.comments.replace_more(limit=None)
-        comments = submission.comments.list()
-    else:
-        comments = api.search_comments(after=max_age, subreddit=submission.subreddit, link_id=submission.id, limit=None)
-
+    submission.comments.replace_more(limit=None)
+    comments = submission.comments.list()
     seen_comments = get_seen_comments(submission)
 
     for comment in comments:
@@ -249,7 +246,7 @@ def write_messages(submission, max_age, minimum_comments, minimum_score, private
         msg = EmailMessage()
         msg['From'] = Address(comment.author.name if comment.author else "deleted", comment.author.name if comment.author else "deleted", "reddit.com")
         msg['Subject'] = submission.title
-        msg['Date'] = datetime.datetime.utcfromtimestamp(comment.created_utc).strftime("%a, %d %b %Y %H:%M:00")
+        msg['Date'] = datetime.utcfromtimestamp(comment.created_utc).strftime("%a, %d %b %Y %H:%M:00")
         msg['References'] = "<%s@reddit.com>%s" % (submission.id, '' if comment.parent_id == submission.id else ' <%s@reddit.com>' % comment.parent_id)
         msg['In-Reply-To'] = "<%s@reddit.com>" % comment.parent_id
         msg['Message-ID'] = "<%s@reddit.com>" % comment.id
