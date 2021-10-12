@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
         name='redp', 
-        version='0.1', 
+        version='0.13', 
         description='Converts reddit submissions and comments to a maildir', 
         author='Peter J. Schroeder', 
         author_email='peterjschroeder@gmail.com', 
