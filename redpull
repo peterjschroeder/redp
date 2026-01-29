@@ -83,7 +83,7 @@ else:
 # API Setup
 reddit = praw.Reddit(client_id=reddit_client_id, client_secret=reddit_client_secret, password=reddit_password, user_agent='redp by /u/peterjschroeder github.com/peterjschroeder/redp', username=reddit_username)
 
-api = PushshiftAPI(r=reddit)
+#api = PushshiftAPI(r=reddit)
 
 # Databse setup
 os.makedirs(os.path.join(xdg_cache_home, 'redp'), exist_ok=True)
@@ -173,16 +173,16 @@ def write_skipped_comment(comment):
 def get_submissions(subreddit, use_pushshift):
     logging.info("Fetching submissions for %s." % subreddit[0])
 
-    if use_pushshift:
-        for j in set(list(api.search_submissions(after=int(float(subreddit[1])), subreddit=subreddit[0], limit=None))):
-            write_messages(j, int(float(subreddit[1])), int(subreddit[2]), int(subreddit[3]), False)
-    else:
-        for j in set(list(reddit.subreddit(subreddit[0]).new(limit=100)) +
-                list(reddit.subreddit(subreddit[0]).controversial(limit=100)) +
-                list(reddit.subreddit(subreddit[0]).rising(limit=100)) +
-                list(reddit.subreddit(subreddit[0]).hot(limit=100)) +
-                list(reddit.subreddit(subreddit[0]).top("all"))):
-            write_messages(j, int(float(subreddit[1])), int(subreddit[2]), int(subreddit[3]), True)
+#    if use_pushshift:
+#        for j in set(list(api.search_submissions(after=int(float(subreddit[1])), subreddit=subreddit[0], limit=None))):
+#            write_messages(j, int(float(subreddit[1])), int(subreddit[2]), int(subreddit[3]), False)
+#    else:
+    for j in set(list(reddit.subreddit(subreddit[0]).new(limit=100)) +
+            list(reddit.subreddit(subreddit[0]).controversial(limit=100)) +
+            list(reddit.subreddit(subreddit[0]).rising(limit=100)) +
+            list(reddit.subreddit(subreddit[0]).hot(limit=100)) +
+            list(reddit.subreddit(subreddit[0]).top("all"))):
+        write_messages(j, int(float(subreddit[1])), int(subreddit[2]), int(subreddit[3]), True)
 
 def write_messages(submission, max_age, minimum_comments, minimum_score, private):
     # Create directories if they do not exist
